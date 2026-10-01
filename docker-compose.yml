@@ -1,16 +1,17 @@
 services:
   app:
     container_name: hello-spring-app
-
     build:
       context: .
       dockerfile: Dockerfile
-
     image: hello-spring:1.0
-
     ports:
       - "${APP_PORT}:${SERVER_PORT}"
-
     environment:
       SERVER_PORT: ${SERVER_PORT}
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILE}
+  redis:
+    container_name: redis-docker
+    image: redis:latest
+    ports:
+      - "6379:6379"
