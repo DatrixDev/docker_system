@@ -1,28 +1,63 @@
 services:
+
   app:
     container_name: hello-spring-app
     build:
       context: .
       dockerfile: Dockerfile
     image: hello-spring:1.0
+
     ports:
       - "${APP_PORT}:${SERVER_PORT}"
+
     environment:
       SERVER_PORT: ${SERVER_PORT}
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILE}
+
       REDIS_HOST: redis
-      REDIS_PORT: 6379
+      REDIS_PORT: ${REDIS_PORT}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+
+    networks:
+      - redis-docker
+
+
   redis:
     container_name: redis-docker
-    image: redis:latest
-    ports:
-      - "6379:6379"
+
+    build:
+      context: .
+      dockerfile: ./docker/dockerfile
+
+    restart: always
+
+    environment:
+      REDIS_HOST: localhost
+      REDIS_PORT: ${REDIS_PORT}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      MEMORY_RELEASE_MAX: ${MEMORY_RELEASE_MAX}
+
+    env_file:
+      - .env
+
+    command: /usr/local/bin/script/start_redis.sh
+
     volumes:
-      - redis_data:/data
+      - ./redis/data:/data/
+
+    ports:
+      - "${REDIS_PORT}:${REDIS_PORT}"
+
+    networks:
+      - redis-docker
+
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
+      test: ["CMD-SHELL", "redis-cli -h localhost -a $REDIS_PASSWORD ping"]
+      interval: 30s
+      timeout: 10s
       retries: 5
-volumes:
-  redis_data:
+
+
+networks:
+  redis-docker:
+    driver: bridge
